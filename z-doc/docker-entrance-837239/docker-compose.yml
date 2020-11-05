@@ -1,0 +1,76 @@
+version: "3.3"
+
+services:
+  asd:
+    image: dnafactory/mariadb
+    volumes:
+      - dumps:/var/backups
+      - databases:/var/lib/mysql
+    environment:
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_PORT=${MYSQL_PORT}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MARIADB_ENTRYPOINT_INITDB=${MARIADB_ENTRYPOINT_INITDB}
+    ports:
+      - "${MYSQL_PORT_BINDED}:3306"
+    networks:
+      - backend
+
+  phpmyadmin:
+    image: dnafactory/phpmyadmin
+    environment:
+      - PMA_HOST=asd
+    ports:
+      - "${PHPMYADMIN_WEB_PORT}:80"
+    networks:
+      - backend
+      - frontend
+
+  machine:
+    image: dnafactory/machine
+    volumes:
+      - ${APP_CODE_PATH}:/var/www/html
+      - sites:/etc/nginx/sites-enabled
+      - logs:/var/log
+    ports:
+      - "${SSH_PORT22}:22"
+      - "${NGINX_PORT80}:80"
+      - "${NGINX_PORT443}:443"
+    tty: true
+    networks:
+      - backend
+      - frontend
+  
+  ftp:
+    image: panubo/vsftpd
+    volumes:
+      - ${FTP_ROOT_PATH}/conf:/etc/vsftpd
+      - ${FTP_ROOT_PATH}/backup:/srv
+    ports: 
+      - "21:21"
+      - "4559-4564:4559-4564"
+    environment:
+      - FTP_USER=test
+      - FTP_PASSWORD=test
+    networks:
+      - backend
+
+
+volumes:
+  apps: { }
+  sites:
+  logs:
+  dumps:
+  databases:
+  esdata1:
+  esdata2:
+  rabbitmqdata:
+  redis:
+
+networks:
+  frontend:
+    driver: "bridge"
+  backend:
+    driver: "bridge"
